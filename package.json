@@ -1,0 +1,13 @@
+{
+  "author": "Karl Seguin <karl@openmymind.net> (http://openmymind.net/)",
+  "name": "chatio",
+  "version": "0.0.1",
+  "engines": { "node": ">= v0.6.9" },
+  "dependencies": {
+    "connect": "= 1.8.4",
+    "ws": "= 0.4.6",
+    "redis": "= 0.7.1",
+    "async": "= 0.1.16",
+    "faker": "git://github.com/Marak/Faker.js.git"
+  }
+}

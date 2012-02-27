@@ -1,0 +1,103 @@
+<html>
+<head>
+<title>playground</title>
+<script src="/jquery.js"></script>
+<style>
+*{margin:0;padding:0;}
+body{font-family:verdana;font-size:90%;}
+#main{width:1200px;margin:10px auto;}
+#chat, #input{border:1px solid #ddd;border-radius:5px;padding:10px;margin-top:1px;}
+#chat > div {padding:4px;}
+#chat > div.status {color:#aaa;}
+
+#rooms, #chat {height:250px;width:1178px;}
+#input{border-color:#aaa;width:100%;font-size:18px;}
+#input:focus{outline:none;}
+
+#rooms{margin-top:50px;}
+#rooms > span{padding:5px;margin:5px;border:1px solid #eee;border-radius:3px;cursor:pointer;}
+#rooms > span.active{background:#222;color:#fff;}
+</style>
+</head>
+<body>
+  <div id="main">
+    <div id="chat"></div>
+    <input type="text" id="input" />
+
+    <div id="rooms">
+      <span>test</span>
+    </div>
+  </div>
+
+<script>
+  var socket = null;
+
+  var $input = $('#input').keydown(function(e) {
+    if (e.keyCode != 13) { return true; }
+    var value = $input.val();
+    $input.val('');
+    sendMessage(value)
+  });
+
+
+  function createRoom(name) {
+    $.post('/rooms', {name: name});
+  };
+
+  var $room = null;
+  $('#rooms').on('click', 'span', function() {
+    var $newRoom = $(this);
+    if ($room != null && $newRoom.text() == $room.text()) {
+      send('leave', {name: $room.text()})
+      $room.removeClass('active');
+      $room = null;
+      return;
+    } 
+
+    if ($room != null) { $room.removeClass('active'); }
+    $room = $newRoom.addClass('active');
+    if (socket == null) {
+      if (typeof WebSocket == 'undefined') {
+        socket = new MozWebSocket("ws://localhost:4005?" + parseInt(Math.random() * 100000));
+      } else {
+        socket = new WebSocket("ws://localhost:4005?" + parseInt(Math.random() * 100000));
+      }
+      socket.onmessage = messageReceived;
+      socket.onopen = function() { send('join', {name: $room.text()}); }
+    } else {
+      send('join', {name: $room.text()});
+    }    
+  });
+
+  function sendMessage(message) {
+    if ($room == null) { return; }
+    send('mesg', {room: $room.text(), message: message})
+  }
+
+  function send(command, payload) {
+    payload.cmd = command
+    socket.send(JSON.stringify(payload));
+  }
+
+  function messageReceived(raw) {
+    data = JSON.parse(raw.data)
+    if (data.cmd == 'joined') {
+      addLine(data.name + ' joined', 'status')
+    }
+    else if (data.cmd == 'join') {
+      addLine('you joined ' + data.name, 'status')
+    }
+    else if (data.cmd == 'mesg') {
+      addLine(data.client.name + '> ' + data.message, 'chat')
+    }
+    else if (data.cmd == 'leave') {
+     addLine(data.name + ' left', 'status') 
+    }
+  }
+
+  function addLine(line, type) {
+    $('<div>').addClass(type).text(line).appendTo($('#chat'));
+  }
+  
+</script>
+</body>

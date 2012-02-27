@@ -1,0 +1,189 @@
+<html>
+<head>
+<title>playground</title>
+<script src="/jquery.js"></script>
+<style>
+*{margin:0;padding:0;}
+body{font-family:verdana;font-size:90%;}
+#main{width:90%;margin:10px auto;}
+#chat {border:1px solid #ddd;border-radius:5px;padding:10px;margin-top:1px;overflow:auto;}
+#chat > div {padding:4px;}
+#chat > div.status {color:#aaa;}
+
+#rooms, #chat {height:250px;}
+
+#rooms{margin-top:50px;}
+#rooms > span{padding:5px;margin:5px;display:inline-block;width:60px;border:1px solid #eee;border-radius:3px;cursor:pointer;text-align:center;}
+#rooms > span.active{background:#222;color:#fff;}
+</style>
+</head>
+<body>
+  <div id="main">
+    <div id="chat"></div>
+
+    <div id="rooms">
+      <span>room1</span>
+      <span>room2</span>
+      <span>room3</span>
+      <span>room4</span>
+      <span>room5</span>
+      <span>room6</span>
+      <span>room7</span>
+      <span>room8</span>
+      <span>room9</span>
+      <span>room10</span>
+      <span>room11</span>
+      <span>room12</span>
+      <span>room13</span>
+      <span>room14</span>
+      <span>room15</span>
+      <span>room16</span>
+      <span>room17</span>
+      <span>room18</span>
+      <span>room19</span>
+      <span>room20</span>
+      <span>room21</span>
+      <span>room22</span>
+      <span>room23</span>
+      <span>room24</span>
+      <span>room25</span>
+      <span>room26</span>
+      <span>room27</span>
+      <span>room28</span>
+      <span>room29</span>
+      <span>room30</span>
+      <span>room31</span>
+      <span>room32</span>
+      <span>room33</span>
+      <span>room34</span>
+      <span>room35</span>
+      <span>room36</span>
+      <span>room37</span>
+      <span>room38</span>
+      <span>room39</span>
+      <span>room40</span>
+      <span>room41</span>
+      <span>room42</span>
+      <span>room43</span>
+      <span>room44</span>
+      <span>room45</span>
+      <span>room46</span>
+      <span>room47</span>
+      <span>room48</span>
+      <span>room49</span>
+      <span>room50</span>
+      <span>room51</span>
+      <span>room52</span>
+      <span>room53</span>
+      <span>room54</span>
+      <span>room55</span>
+      <span>room56</span>
+      <span>room57</span>
+      <span>room58</span>
+      <span>room59</span>
+      <span>room60</span>
+      <span>room61</span>
+      <span>room62</span>
+      <span>room63</span>
+      <span>room64</span>
+      <span>room65</span>
+      <span>room66</span>
+      <span>room67</span>
+      <span>room68</span>
+      <span>room69</span>
+      <span>room70</span>
+      <span>room71</span>
+      <span>room72</span>
+      <span>room73</span>
+      <span>room74</span>
+      <span>room75</span>
+      <span>room76</span>
+      <span>room77</span>
+      <span>room78</span>
+      <span>room79</span>
+      <span>room80</span>
+      <span>room81</span>
+      <span>room82</span>
+      <span>room83</span>
+      <span>room84</span>
+      <span>room85</span>
+      <span>room86</span>
+      <span>room87</span>
+      <span>room88</span>
+      <span>room89</span>
+      <span>room90</span>
+      <span>room91</span>
+      <span>room92</span>
+      <span>room93</span>
+      <span>room94</span>
+      <span>room95</span>
+      <span>room96</span>
+      <span>room97</span>
+      <span>room98</span>
+      <span>room99</span>
+      <span>room100</span>
+    </div>
+  </div>
+
+<script>
+  var socket = null;
+
+  var $room = null;
+  $('#rooms').on('click', 'span', function() {
+    var $newRoom = $(this);
+    if ($room != null && $newRoom.text() == $room.text()) {
+      send('leave', {name: $room.text()})
+      $room.removeClass('active');
+      $room = null;
+      return;
+    } 
+
+    if ($room != null) { $room.removeClass('active'); }
+    $room = $newRoom.addClass('active');
+    if (socket == null) {
+      if (typeof WebSocket == 'undefined') {
+        socket = new MozWebSocket("ws://" + top.location.hostname + ":4005/?-watch-" + parseInt(Math.random() * 100000));
+      } else {
+        socket = new WebSocket("ws://" + top.location.hostname + ":4005/?-watch-" + parseInt(Math.random() * 100000));
+      }
+      socket.onmessage = messageReceived;
+      socket.onopen = function() { send('join', {name: $room.text()}); }
+    } else {
+      send('join', {name: $room.text()});
+    }    
+  });
+
+
+  function send(command, payload) {
+    payload.cmd = command
+    socket.send(JSON.stringify(payload));
+  }
+
+  function messageReceived(raw) {
+    data = JSON.parse(raw.data)
+    if (data.cmd == 'joined') {
+      addLine(data.name + ' joined', 'status')
+    }
+    else if (data.cmd == 'join') {
+      addLine('you joined ' + data.name, 'status')
+    }
+    else if (data.cmd == 'mesg') {
+      addLine(data.client.name + '> ' + data.message, 'chat')
+    }
+    else if (data.cmd == 'leave') {
+     addLine(data.name + ' left', 'status') 
+    }
+  }
+
+  var $chat = $('#chat');
+  var chat = $chat[0];
+  function addLine(line, type) {
+    $('<div>').addClass(type).text(line).appendTo($chat);
+    chat.scrollTop = chat.scrollHeight
+    // var count = $chat.children().length;
+    // console.log(count)
+    // if (count > 250) { $chat.remove(':lt(250)');}
+  }
+  
+</script>
+</body>
